@@ -1,0 +1,13 @@
+$ORIGIN mirage.io.
+$TTL 604800
+
+mirage.io.		604800	IN	 SOA   (
+	ns0.mirage.io. we.mirage.io. 201704261
+	16384 2048 1048576 2560
+)
+
+mirage.io.              IN      NS      ns1.mirage.io.
+mirage.io.              IN      NS      ns2.mirage.io.
+ns1.mirage.io.          IN      A       127.0.0.1
+ns2.mirage.io.          IN      A       127.0.0.2
+mirage.io.              IN	MX	10 mail.mirage.io
