@@ -1,7 +1,7 @@
 open Lwt.Infix
 
-let server_src = Logs.Src.create "server" ~doc:"DNS server"
-module Server_log = (val Logs.src_log server_src : Logs.LOG)
+let src = Logs.Src.create "server" ~doc:"DNS server"
+module Log = (val Logs.src_log src : Logs.LOG)
 
 (* Server settings *)
 let listening_port = 53
@@ -12,15 +12,15 @@ module Main (K:Mirage_types_lwt.KV_RO) (S:Mirage_types_lwt.STACKV4) = struct
   module Resolver = Dns_resolver_mirage.Make(OS.Time)(S)
 
   let load_zone k =
-    K.size k "mirage.io.zone"
-    >>= function
+    K.size k "mirage.io.zone" >>= function
     | Error _ -> Lwt.fail (Failure "test.zone not found")
     | Ok sz ->
-      Server_log.info (fun f -> f "Loading %Ld bytes of zone data" sz);
-      K.read k "mirage.io.zone" 0L sz
-      >>= function
+      Log.info (fun f -> f "Loading %Ld bytes of zone data" sz);
+      K.read k "mirage.io.zone" 0L sz >>= function
       | Error _ -> Lwt.fail (Failure "test.zone error reading")
       | Ok pages -> Lwt.return (Cstruct.concat pages |> Cstruct.to_string)
+
+  let to_str b = try Dns.Packet.(to_string (parse b)) with _ -> "parse error"
 
   let serve s zonebuf =
     let open Dns_server in
@@ -29,21 +29,29 @@ module Main (K:Mirage_types_lwt.KV_RO) (S:Mirage_types_lwt.STACKV4) = struct
     let udp = S.udpv4 s in
     S.listen_udpv4 s ~port:listening_port (
       fun ~src ~dst ~src_port buf ->
-        Server_log.info (fun f -> f "Got DNS query via UDP");
-        let src' = (Ipaddr.V4 dst), listening_port in
-        let dst' = (Ipaddr.V4 src), src_port in
+        Log.info (fun f -> f "%a:%d query %s"
+                     Ipaddr.V4.pp_hum src src_port (to_str buf));
+        let src' = Ipaddr.V4 dst, listening_port in
+        let dst' = Ipaddr.V4 src, src_port in
         process_query buf (Cstruct.len buf) src' dst' processor >>= function
         | None ->
-          Server_log.info (fun f -> f "No response");
+          Log.info (fun f -> f "%a:%d no response"
+                       Ipaddr.V4.pp_hum src src_port);
           Lwt.return ()
         | Some rbuf ->
-          Server_log.info (fun f -> f "Sending reply");
-          U.write ~src_port:listening_port ~dst:src ~dst_port:src_port udp rbuf >>= function
-          | Error e -> Server_log.warn (fun f -> f "Failure sending reply: %a" U.pp_error e);
+          Log.info (fun f -> f "%a:%d reply %s"
+                       Ipaddr.V4.pp_hum src src_port (to_str rbuf));
+          let dst_port = src_port
+          and src_port = listening_port
+          in
+          U.write ~src_port ~dst:src ~dst_port udp rbuf >>= function
+          | Error e ->
+            Log.warn (fun f -> f "%a:%d failure sending reply: %a"
+                         Ipaddr.V4.pp_hum src src_port U.pp_error e);
             Lwt.return_unit
           | Ok () -> Lwt.return ()
     );
-    Server_log.info (fun f -> f "DNS server listening on UDP port %d" listening_port);
+    Log.info (fun f -> f "DNS server listening on UDP port %d" listening_port);
     S.listen s
 
   let start kv_store stack =
