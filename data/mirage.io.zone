@@ -2,7 +2,7 @@ $ORIGIN mirage.io.
 $TTL 604800
 
 mirage.io.		604800	IN	 SOA   (
-	ns0.mirage.io. we.mirage.io. 2017072901
+	ns0.mirage.io. we.mirage.io. 2017073001
 	16384 2048 1048576 2560
 )
 
@@ -10,13 +10,13 @@ mirage.io.		604800	IN	 SOA   (
 @                       IN      NS      ns1
 @            10800      IN      MX      10 spool.mail.gandi.net.
 @            10800      IN      MX      50 fb.mail.gandi.net.
-@            300        IN      A       46.43.42.136
+@            10800      IN      A       46.43.42.136
 
 ns0                     IN      A       198.167.222.212
 ns1                     IN      A       194.150.168.147
 
 canopy        10800     IN      A       62.176.169.169
-ci            3600      IN      A       147.75.101.83
+ci            10800     IN      A       147.75.101.83
 git           10800     IN      A       162.242.173.151
 infra-1       10800     IN      A       147.75.106.53
 marrakech2017 10800     IN      A       198.167.222.204
