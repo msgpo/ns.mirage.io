@@ -6,7 +6,7 @@ let data = crunch "./data"
 let stack =
   if_impl Key.is_unix
     (socket_stackv4 [Ipaddr.V4.any])
-    (generic_stackv4 default_network)
+    (static_ipv4_stack ~arp:farp default_network)
 
 let logger = syslog_udp stack
 
