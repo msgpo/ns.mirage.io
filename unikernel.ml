@@ -54,8 +54,7 @@ module Main (K:Mirage_types_lwt.KV_RO) (S:Mirage_types_lwt.STACKV4) = struct
     Log.info (fun f -> f "DNS server listening on UDP port %d" listening_port);
     S.listen s
 
-  let start kv_store stack =
-    Logs.(set_level (Some Info));
+  let start kv_store stack _ =
     load_zone kv_store >>= fun zonebuf ->
     serve stack zonebuf
 end
